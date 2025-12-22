@@ -1,50 +1,56 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+
+// Paksa jalan di Edge Server (Supaya lokasi terdeteksi USA/Singapore, bukan Indo)
+export const runtime = 'edge'; 
 
 export async function POST(req: Request) {
   try {
-    // 1. Tangkap data dari Frontend
     const { product, platform, tone } = await req.json();
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
+    // API Key (Hardcode sementara)
+    const apiKey = "AIzaSyAIUlNUpx0u3je9YcmLub8W4LHEpMa2DuY"; 
 
     if (!apiKey) {
-      return NextResponse.json({ error: "API Key belum dipasang bos!" }, { status: 500 });
+      return NextResponse.json({ result: "API Key hilang!" }, { status: 500 });
     }
 
-    // 2. Siapkan Otak Gemini
-    const apiKey = "AIzaSyAIUlNUpx0u3je9YcmLub8W4LHEpMa2DuY";
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const modelId = "gemini-1.5-flash"; 
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
-    // 3. Buat Perintah (Prompt) yang MEMATIKAN
-    const prompt = `
-      Bertindaklah sebagai Social Media Specialist profesional di Indonesia.
-      Tugasmu adalah membuat caption viral untuk produk berikut:
+    const promptText = `
+      Bertindaklah sebagai Social Media Specialist profesional.
+      Buat caption viral untuk platform: ${platform}.
+      Topik/Produk: "${product}".
+      Gaya Bahasa (Tone): ${tone}.
       
-      PRODUK: "${product}"
-      PLATFORM: ${platform}
-      GAYA BAHASA (TONE): ${tone}
-      
-      INSTRUKSI KHUSUS:
-      1. Buat 3 OPSI caption yang berbeda variasi.
-      2. Gunakan Bahasa Indonesia yang natural, gaul, dan relevan dengan ${platform}.
-      3. Jika platform TikTok/Instagram, gunakan banyak emoji yang pas.
-      4. Jika platform LinkedIn, gunakan bahasa lebih profesional tapi tetap menarik.
-      5. Sertakan 5-10 HASHTAGS yang sedang trending dan relevan di setiap opsi.
-      6. Jangan kaku seperti robot terjemahan. Gunakan istilah lokal (slang) jika tone-nya santai.
-
-      FORMAT OUTPUT:
-      Tampilkan langsung Opsi 1, Opsi 2, dan Opsi 3 dengan pemisah yang jelas.
+      Instruksi:
+      1. Buat 3 Opsi caption berbeda.
+      2. Gunakan Bahasa Indonesia yang natural & gaul.
+      3. Sertakan emoji yang pas.
+      4. Wajib sertakan 5-10 hashtag viral di setiap opsi.
     `;
 
-    // 4. Kirim ke Google & Tunggu Jawaban
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Kirim pakai Fetch (Cara Manual ala Website Lama)
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ 
+          parts: [{ text: promptText }] 
+        }]
+      })
+    });
 
-    // 5. Kirim balik ke Frontend
-    return NextResponse.json({ result: text });
+    const data = await response.json();
 
-  } catch (error) {
-    return NextResponse.json({ error: "Gagal racik caption: " + error }, { status: 500 });
+    if (data.error) {
+      return NextResponse.json({ error: "Google Error: " + data.error.message }, { status: 500 });
+    }
+
+    const resultText = data.candidates[0].content.parts[0].text;
+    return NextResponse.json({ result: resultText });
+
+  } catch (error: any) {
+    return NextResponse.json({ error: "System Error: " + error.message }, { status: 500 });
   }
 }
