@@ -1,4 +1,4 @@
-import { createRouteClient } from '@supabase/auth-helpers-nextjs';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -7,9 +7,10 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code');
 
   if (code) {
-    const supabase = createRouteClient({ cookies });
+    const supabase = createRouteHandlerClient({ cookies });
     await supabase.auth.exchangeCodeForSession(code);
   }
 
+  // Setelah sukses login, lempar ke Dashboard
   return NextResponse.redirect(new URL('/dashboard', request.url));
 }

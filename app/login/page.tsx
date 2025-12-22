@@ -33,9 +33,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-luxury-cream p-4">
-      <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-luxury-terracotta/20">
+      <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-luxury-terracotta/20 text-luxury-dark">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-luxury-dark">Masuk ViralGuidify</h1>
+          <h1 className="text-2xl font-bold">Masuk ViralGuidify</h1>
           <p className="text-gray-500 text-sm mt-2">Masukan email aktif Anda</p>
         </div>
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 rounded-xl border border-gray-200 outline-none text-luxury-dark"
+            className="w-full p-3 rounded-xl border border-gray-200 outline-none"
             placeholder="nama@email.com"
           />
           <button 
