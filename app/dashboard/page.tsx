@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-// Import Supabase Client agar bisa baca data user
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// Kita gunakan Browser Client dari package terbaru yang Bapak punya (ssr)
+import { createBrowserClient } from '@supabase/ssr'
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("text"); 
@@ -26,36 +26,49 @@ export default function DashboardPage() {
   const platforms = ["Instagram", "TikTok", "Facebook", "LinkedIn", "Twitter/X"];
   const tones = ["Santai & Gaul", "Hard Selling", "Lucu / Receh", "Formal & Profesional", "Storytelling / Emosional"];
 
+  // Link Doku (Tes 20rb)
+  const paymentLink = "https://pay.doku.com/p-link/p/KzFonnUfSH";
+
   // 1. Cek Status User & Kuota Saat Halaman Dimuat
   useEffect(() => {
     const checkUser = async () => {
-      const supabase = createClientComponentClient();
-      
-      // Ambil data user yang sedang login
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        setUserEmail(user.email || "");
+      try {
+        // Inisialisasi Supabase Client (Versi SSR / Baru)
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
         
-        // Ambil data profil (cek status premium)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_premium')
-          .eq('email', user.email)
-          .single();
+        // Ambil data user yang sedang login
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          setUserEmail(user.email || "");
           
-        if (profile?.is_premium) {
-          setIsPremium(true);
-          setQuota(9999); // Premium = Unlimited Kuota
+          // Ambil data profil (cek status premium)
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_premium')
+            .eq('email', user.email)
+            .single();
+            
+          if (profile?.is_premium) {
+            setIsPremium(true);
+            setQuota(9999); // Premium = Unlimited Kuota
+          } else {
+            // Kalau bukan premium, baca kuota dari LocalStorage (atau default 2)
+            const savedQuota = localStorage.getItem("guest_quota");
+            setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
+          }
         } else {
-          // Kalau bukan premium, baca kuota dari LocalStorage (atau default 2)
+          // Kalau belum login (Tamu)
           const savedQuota = localStorage.getItem("guest_quota");
           setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
         }
-      } else {
-        // Kalau belum login (Tamu)
-        const savedQuota = localStorage.getItem("guest_quota");
-        setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
+      } catch (error) {
+        console.error("Error cek user:", error);
+        // Fallback aman agar halaman tetap jalan walau error koneksi
+        setQuota(2);
       }
     };
 
@@ -102,7 +115,7 @@ export default function DashboardPage() {
           localStorage.setItem("guest_quota", newQuota.toString());
         }
       } else {
-        alert("Gagal: " + data.error);
+        alert("Gagal: " + (data.error || "Terjadi kesalahan sistem"));
       }
 
     } catch (error) {
@@ -111,9 +124,6 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   };
-
-  // --- LINK PEMBAYARAN DOKU (TES 20rb) ---
-  const paymentLink = "https://pay.doku.com/p-link/p/KzFonnUfSH"; // <-- Link Tes Rp 20.000
 
   return (
     <div className="flex h-screen bg-luxury-cream overflow-hidden relative font-sans">

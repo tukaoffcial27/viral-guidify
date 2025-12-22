@@ -3,6 +3,9 @@
 import Link from "next/link";
 
 export default function PricingPage() {
+  // Link Tes DOKU (Rp 20.000)
+  const paymentLink = "https://pay.doku.com/p-link/p/KzFonnUfSH";
+
   return (
     <div className="min-h-screen bg-luxury-cream font-sans flex flex-col">
       
@@ -44,7 +47,7 @@ export default function PricingPage() {
             </Link>
           </div>
 
-          {/* PAKET SULTAN (99rb) */}
+          {/* PAKET SULTAN (PREMIUM) */}
           <div className="bg-white rounded-3xl p-8 border-2 border-luxury-green shadow-2xl relative overflow-hidden transform md:-translate-y-4">
             <div className="absolute top-0 right-0 bg-luxury-green text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">PALING LARIS 🔥</div>
             
@@ -63,12 +66,15 @@ export default function PricingPage() {
               <li className="flex items-center gap-3 font-medium"><span className="text-luxury-green">✓</span> Semua Pilihan Gaya Bahasa & Platform</li>
             </ul>
 
-            <button 
+            {/* TOMBOL INI SEKARANG MENGARAH KE DOKU */}
+            <a 
+              href={paymentLink}
+              target="_blank"
+              rel="noopener noreferrer"
               className="block w-full py-4 rounded-xl bg-luxury-green text-white font-bold text-center hover:bg-luxury-dark transition-all shadow-lg shadow-luxury-green/30 hover:-translate-y-1"
-              onClick={() => alert('Sistem pembayaran akan segera hadir! (DOKU/Midtrans)')}
             >
               Upgrade Sekarang ⚡
-            </button>
+            </a>
           </div>
 
         </div>
