@@ -18,17 +18,16 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Kolom 2: Produk */}
+          {/* Kolom 2: Produk (Sudah Bersih) */}
           <div>
             <h4 className="font-bold text-luxury-dark mb-6">Produk</h4>
             <ul className="space-y-4 text-sm text-gray-500">
               <li><Link href="/dashboard" className="hover:text-luxury-green transition-colors">Fitur Utama</Link></li>
               <li><Link href="/pricing" className="hover:text-luxury-green transition-colors">Harga & Paket</Link></li>
-              <li><span className="text-gray-300 cursor-not-allowed">Studi Kasus (Soon)</span></li>
             </ul>
           </div>
 
-          {/* Kolom 3: Legal (SUDAH DIPERBAIKI) */}
+          {/* Kolom 3: Legal (Link Refund Sudah Benar) */}
           <div>
             <h4 className="font-bold text-luxury-dark mb-6">Legal</h4>
             <ul className="space-y-4 text-sm text-gray-500">
@@ -38,17 +37,18 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Kolom 4: Hubungi */}
+          {/* Kolom 4: Hubungi Kami (Link ke Page Contact) */}
           <div>
-            <h4 className="font-bold text-luxury-dark mb-6">Hubungi Kami</h4>
+            <h4 className="font-bold text-luxury-dark mb-6">Bantuan</h4>
             <ul className="space-y-4 text-sm text-gray-500">
-              <li className="flex items-center gap-2">
-                <span>✉️</span>
-                <a href="mailto:support@guidify.app" className="hover:text-luxury-green transition-colors">support@guidify.app</a>
+               <li>
+                <Link href="/contact" className="flex items-center gap-2 hover:text-luxury-green transition-colors group">
+                  <span>💬</span>
+                  <span className="group-hover:underline">Hubungi Kami</span>
+                </Link>
               </li>
-              <li className="flex items-center gap-2">
-                <span>💬</span>
-                <Link href="/contact" className="hover:text-luxury-green transition-colors">WhatsApp Support</Link>
+              <li className="text-gray-400 text-xs mt-4">
+                Senin - Jumat (09.00 - 17.00 WIB)
               </li>
             </ul>
           </div>
