@@ -3,9 +3,8 @@
 import Link from "next/link";
 
 export default function PricingPage() {
-  // NANTI: Tempel Link Xendit Bapak di sini saat sudah jadi
-  // Sekarang biarkan pagar (#) dulu agar tidak error/popup aneh
-  const paymentLink = "#"; 
+  // LINK MAYAR FINAL (Sudah dipasang)
+  const paymentLink = "https://tuka-official.myr.id/pl/viralguidify-premium";
 
   return (
     <div className="min-h-screen bg-luxury-cream font-sans flex flex-col">
@@ -65,11 +64,10 @@ export default function PricingPage() {
               <li className="flex items-center gap-3 font-medium"><span className="text-luxury-green">✓</span> Semua Gaya Bahasa</li>
             </ul>
 
-            {/* PERBAIKAN: Tombol langsung Link, tidak ada popup lagi */}
+            {/* TOMBOL YANG MENGARAH KE MAYAR */}
             <a 
               href={paymentLink}
-              // Jika linknya masih pagar (#), jangan buka tab baru dulu
-              target={paymentLink === "#" ? "_self" : "_blank"} 
+              target="_blank"
               rel="noopener noreferrer"
               className="block w-full py-4 rounded-xl bg-luxury-green text-white font-bold text-center hover:bg-luxury-dark transition-all shadow-lg shadow-luxury-green/30 hover:-translate-y-1"
             >
