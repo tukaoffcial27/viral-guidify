@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 
-// Paksa jalan di Edge Server (Supaya lokasi terdeteksi USA/Singapore, bukan Indo)
 export const runtime = 'edge'; 
 
 export async function POST(req: Request) {
   try {
     const { product, platform, tone } = await req.json();
 
-    // API Key (Hardcode sementara)
+    // HANYA BOLEH ADA SATU BARIS INI
     const apiKey = "AIzaSyAIUlNUpx0u3je9YcmLub8W4LHEpMa2DuY"; 
 
     if (!apiKey) {
@@ -30,14 +29,11 @@ export async function POST(req: Request) {
       4. Wajib sertakan 5-10 hashtag viral di setiap opsi.
     `;
 
-    // Kirim pakai Fetch (Cara Manual ala Website Lama)
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ 
-          parts: [{ text: promptText }] 
-        }]
+        contents: [{ parts: [{ text: promptText }] }]
       })
     });
 
