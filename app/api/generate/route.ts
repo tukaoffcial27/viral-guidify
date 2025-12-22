@@ -6,17 +6,16 @@ export async function POST(req: Request) {
   try {
     const { product, platform, tone } = await req.json();
     
-    // Ambil kunci dari Vercel
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json({ result: "API Key belum disetting di Vercel!" }, { status: 500 });
     }
 
-    // --- PERUBAHAN DISINI ---
-    // Kita pakai 'gemini-pro' saja. 
-    // Ini versi "Global Stable" yang pasti jalan di semua akun.
-    const modelId = "gemini-pro"; 
+    // --- KITA PAKAI VERSI TERBARU (GEMINI 3) ---
+    // Sesuai screenshot Bapak: "Gemini 3 Flash Preview"
+    // Format kode teknisnya biasanya lowercase dengan strip.
+    const modelId = "gemini-3-flash-preview"; 
     
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
@@ -45,6 +44,11 @@ export async function POST(req: Request) {
 
     if (data.error) {
       return NextResponse.json({ error: "Google Error: " + data.error.message }, { status: 500 });
+    }
+
+    // Cek keamanan jika data kosong
+    if (!data.candidates || data.candidates.length === 0) {
+       return NextResponse.json({ error: "Model Gemini 3 belum merespon. Coba generate lagi." }, { status: 500 });
     }
 
     const resultText = data.candidates[0].content.parts[0].text;
