@@ -5,6 +5,9 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  
+  // Tangkap jika ada tujuan khusus (next), jika tidak ada default ke /pricing
+  const next = searchParams.get('next') ?? '/pricing'
 
   if (code) {
     const cookieStore = await cookies()
@@ -26,17 +29,15 @@ export async function GET(request: Request) {
       }
     )
     
-    // Tukar kode dari email menjadi session login
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
       // PERBAIKAN LOGIKA:
-      // Setelah login sukses, SELALU arahkan ke Dashboard.
-      // Jangan biarkan user nyasar ke home atau pricing lagi.
-      return NextResponse.redirect(`${origin}/dashboard`)
+      // Arahkan user ke halaman Pricing (Upgrade) agar mereka segera bayar.
+      return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  // Jika gagal login, kembalikan ke halaman login
+  // Jika gagal, kembalikan ke login
   return NextResponse.redirect(`${origin}/login`)
 }
