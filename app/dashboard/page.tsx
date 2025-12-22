@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-// Kita gunakan Browser Client dari package terbaru yang Bapak punya (ssr)
-import { createBrowserClient } from '@supabase/ssr'
+// PERBAIKAN: Menggunakan package yang benar sesuai project Bapak (@supabase/ssr)
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("text"); 
   const [quota, setQuota] = useState(2); 
   const [inputText, setInputText] = useState("");
   
-  // State untuk User Info
+  // State User
   const [userEmail, setUserEmail] = useState("");
   const [isPremium, setIsPremium] = useState(false);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   
-  // Pilihan User
+  // Pilihan
   const [platform, setPlatform] = useState("Instagram");
   const [tone, setTone] = useState("Santai & Gaul");
 
@@ -26,26 +27,25 @@ export default function DashboardPage() {
   const platforms = ["Instagram", "TikTok", "Facebook", "LinkedIn", "Twitter/X"];
   const tones = ["Santai & Gaul", "Hard Selling", "Lucu / Receh", "Formal & Profesional", "Storytelling / Emosional"];
 
-  // Link Doku (Tes 20rb)
+  // LINK DOKU (TES 20RB)
   const paymentLink = "https://pay.doku.com/p-link/p/KzFonnUfSH";
 
-  // 1. Cek Status User & Kuota Saat Halaman Dimuat
+  // 1. Cek User & Status Premium (Versi SSR)
   useEffect(() => {
     const checkUser = async () => {
       try {
-        // Inisialisasi Supabase Client (Versi SSR / Baru)
+        // Inisialisasi Client Supabase yang benar
         const supabase = createBrowserClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
         
-        // Ambil data user yang sedang login
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
           setUserEmail(user.email || "");
           
-          // Ambil data profil (cek status premium)
+          // Cek status premium di database
           const { data: profile } = await supabase
             .from('profiles')
             .select('is_premium')
@@ -54,27 +54,26 @@ export default function DashboardPage() {
             
           if (profile?.is_premium) {
             setIsPremium(true);
-            setQuota(9999); // Premium = Unlimited Kuota
+            setQuota(9999); // Unlimited
           } else {
-            // Kalau bukan premium, baca kuota dari LocalStorage (atau default 2)
+            // Jika Free, baca kuota tamu
             const savedQuota = localStorage.getItem("guest_quota");
             setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
           }
         } else {
-          // Kalau belum login (Tamu)
+          // Jika Tamu (Belum Login)
           const savedQuota = localStorage.getItem("guest_quota");
           setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
         }
       } catch (error) {
         console.error("Error cek user:", error);
-        // Fallback aman agar halaman tetap jalan walau error koneksi
-        setQuota(2);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
 
     checkUser();
   }, []);
-
 
   // --- FUNGSI GENERATE ---
   const handleGenerate = async () => {
@@ -85,7 +84,7 @@ export default function DashboardPage() {
     }
 
     if (!inputText.trim()) {
-      alert("Isi dulu deskripsi produknya, Bos!");
+      alert("Isi deskripsi produknya dulu ya!");
       return;
     }
 
@@ -117,7 +116,6 @@ export default function DashboardPage() {
       } else {
         alert("Gagal: " + (data.error || "Terjadi kesalahan sistem"));
       }
-
     } catch (error) {
       alert("Terjadi kesalahan jaringan.");
     } finally {
@@ -145,7 +143,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* MODAL PREMIUM FITUR */}
+      {/* MODAL FITUR PREMIUM */}
       {showPremiumModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-luxury-dark/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-luxury-green/30 text-center animate-fade-in-up">
@@ -173,7 +171,7 @@ export default function DashboardPage() {
             <button className="w-full flex items-center gap-3 px-4 py-3 bg-luxury-green/10 text-luxury-green rounded-xl font-semibold transition-colors">
               <span className="text-xl">✨</span> Buat Caption
             </button>
-            {/* Tombol Upgrade di Sidebar */}
+            {/* Tombol Upgrade Sidebar */}
             {!isPremium && (
               <a href={paymentLink} target="_blank" className="w-full flex items-center gap-3 px-4 py-3 text-luxury-terracotta hover:bg-orange-50 rounded-xl font-bold transition-colors mt-4 border border-luxury-terracotta/30">
                 <span className="text-xl">🚀</span> Upgrade Pro
@@ -182,7 +180,7 @@ export default function DashboardPage() {
           </nav>
         </div>
         
-        {/* User Info / Kuota */}
+        {/* User Info */}
         <div className="pt-6 border-t border-gray-100">
           <div className="bg-luxury-cream/50 p-4 rounded-xl mb-4 border border-luxury-terracotta/30">
             <p className="text-xs font-bold text-luxury-dark/50 uppercase mb-1">
@@ -201,7 +199,6 @@ export default function DashboardPage() {
             )}
           </div>
           
-          {/* Tampilkan Email User jika Login */}
           <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 cursor-pointer">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isPremium ? "bg-luxury-green" : "bg-gray-400"}`}>
                {userEmail ? userEmail[0].toUpperCase() : "?"}
@@ -303,22 +300,12 @@ export default function DashboardPage() {
                   disabled={isLoading}
                   className={`bg-luxury-green text-white px-8 py-3 rounded-xl font-bold hover:bg-luxury-dark transition-all shadow-lg shadow-luxury-green/20 flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
                 >
-                  {isLoading ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Sedang Berpikir...</span>
-                    </>
-                  ) : (
-                    <>Generate ✨</>
-                  )}
+                  {isLoading ? "Sedang Berpikir..." : "Generate ✨"}
                 </button>
               </div>
             </div>
 
-            {/* HASIL ASLI DARI GEMINI */}
+            {/* HASIL */}
             {generatedResult && (
               <div className="mt-8 animate-fade-in-up">
                 <div className="flex justify-between items-center mb-4">
