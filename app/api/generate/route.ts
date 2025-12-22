@@ -1,19 +1,24 @@
 import { NextResponse } from "next/server";
 
+// Paksa jalan di Edge Server (Supaya lokasi terdeteksi USA/Singapore, bukan Indo)
 export const runtime = 'edge'; 
 
 export async function POST(req: Request) {
   try {
     const { product, platform, tone } = await req.json();
 
-    // HANYA BOLEH ADA SATU BARIS INI
-    const apiKey = "AIzaSyAIUlNUpx0u3je9YcmLub8W4LHEpMa2DuY"; 
+    // UPDATE PENTING: Ambil kunci dari Brankas Vercel (Environment Variable)
+    // Jangan pernah tempel kunci asli di sini lagi.
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json({ result: "API Key hilang!" }, { status: 500 });
+      return NextResponse.json({ result: "API Key belum disetting di Vercel!" }, { status: 500 });
     }
 
+    // Kita tetap pakai 1.5 Flash karena ini yang RESMI dan STABIL.
+    // Versi "3.0" belum ada. Di file lama Bapak "gemini-3-flash-preview" itu kemungkinan versi uji coba lama yang sudah dihapus Google.
     const modelId = "gemini-1.5-flash"; 
+    
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
     const promptText = `
