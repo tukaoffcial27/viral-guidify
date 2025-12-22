@@ -8,7 +8,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  
   const supabase = createClientComponentClient();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -17,7 +16,7 @@ export default function LoginPage() {
     setMessage("");
 
     const { error } = await supabase.auth.signInWithOtp({
-      email: email,
+      email,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -26,7 +25,7 @@ export default function LoginPage() {
     if (error) {
       setMessage("❌ Gagal: " + error.message);
     } else {
-      setMessage("✅ Cek email Anda untuk link login!");
+      setMessage("✅ Link login telah dikirim ke email Anda!");
     }
     setLoading(false);
   };
@@ -34,25 +33,20 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-luxury-cream p-4">
       <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-luxury-terracotta/20 text-luxury-dark">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold">Masuk ViralGuidify</h1>
-          <p className="text-gray-500 text-sm mt-2">Masukan email aktif Anda</p>
-        </div>
-
+        <h1 className="text-2xl font-bold text-center mb-6">Masuk ViralGuidify</h1>
         {message && (
           <div className={`p-4 rounded-xl mb-6 text-sm font-bold ${message.includes("✅") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
             {message}
           </div>
         )}
-
         <form onSubmit={handleLogin} className="space-y-4">
           <input 
             type="email" 
-            required
+            placeholder="nama@email.com"
+            className="w-full p-3 rounded-xl border border-gray-200 outline-none"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 rounded-xl border border-gray-200 outline-none"
-            placeholder="nama@email.com"
+            required
           />
           <button 
             type="submit" 
