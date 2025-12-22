@@ -25,8 +25,18 @@ export async function GET(request: Request) {
         },
       }
     )
-    await supabase.auth.exchangeCodeForSession(code)
+    
+    // Tukar kode dari email menjadi session login
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!error) {
+      // PERBAIKAN LOGIKA:
+      // Setelah login sukses, SELALU arahkan ke Dashboard.
+      // Jangan biarkan user nyasar ke home atau pricing lagi.
+      return NextResponse.redirect(`${origin}/dashboard`)
+    }
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`)
+  // Jika gagal login, kembalikan ke halaman login
+  return NextResponse.redirect(`${origin}/login`)
 }
