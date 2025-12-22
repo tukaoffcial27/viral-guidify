@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+// Import Supabase Client agar bisa baca data user
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("text"); 
   const [quota, setQuota] = useState(2); 
   const [inputText, setInputText] = useState("");
+  
+  // State untuk User Info
+  const [userEmail, setUserEmail] = useState("");
+  const [isPremium, setIsPremium] = useState(false);
   
   // Pilihan User
   const [platform, setPlatform] = useState("Instagram");
@@ -20,38 +26,63 @@ export default function DashboardPage() {
   const platforms = ["Instagram", "TikTok", "Facebook", "LinkedIn", "Twitter/X"];
   const tones = ["Santai & Gaul", "Hard Selling", "Lucu / Receh", "Formal & Profesional", "Storytelling / Emosional"];
 
+  // 1. Cek Status User & Kuota Saat Halaman Dimuat
   useEffect(() => {
-    const savedQuota = localStorage.getItem("guest_quota");
-    if (savedQuota !== null) {
-      setQuota(parseInt(savedQuota));
-    }
+    const checkUser = async () => {
+      const supabase = createClientComponentClient();
+      
+      // Ambil data user yang sedang login
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        setUserEmail(user.email || "");
+        
+        // Ambil data profil (cek status premium)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_premium')
+          .eq('email', user.email)
+          .single();
+          
+        if (profile?.is_premium) {
+          setIsPremium(true);
+          setQuota(9999); // Premium = Unlimited Kuota
+        } else {
+          // Kalau bukan premium, baca kuota dari LocalStorage (atau default 2)
+          const savedQuota = localStorage.getItem("guest_quota");
+          setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
+        }
+      } else {
+        // Kalau belum login (Tamu)
+        const savedQuota = localStorage.getItem("guest_quota");
+        setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
+      }
+    };
+
+    checkUser();
   }, []);
 
-  // --- FUNGSI GENERATE YANG ASLI ---
+
+  // --- FUNGSI GENERATE ---
   const handleGenerate = async () => {
-    // 1. Cek Kuota
-    if (quota <= 0) {
+    // Cek Kuota (Kecuali Premium)
+    if (!isPremium && quota <= 0) {
       setShowLimitModal(true);
       return;
     }
 
-    // 2. Cek Input
     if (!inputText.trim()) {
       alert("Isi dulu deskripsi produknya, Bos!");
       return;
     }
 
-    // 3. Mulai Loading
     setIsLoading(true);
-    setGeneratedResult(""); // Kosongkan hasil lama
+    setGeneratedResult(""); 
 
     try {
-      // 4. PANGGIL API ROUTE (Kirim Data ke Backend)
       const response = await fetch("/api/generate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           product: inputText,
           platform: platform,
@@ -62,13 +93,14 @@ export default function DashboardPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Berhasil! Tampilkan hasil dari Gemini
         setGeneratedResult(data.result);
         
-        // Kurangi Kuota HANYA jika sukses
-        const newQuota = quota - 1;
-        setQuota(newQuota);
-        localStorage.setItem("guest_quota", newQuota.toString());
+        // Kurangi Kuota HANYA jika BUKAN Premium
+        if (!isPremium) {
+          const newQuota = quota - 1;
+          setQuota(newQuota);
+          localStorage.setItem("guest_quota", newQuota.toString());
+        }
       } else {
         alert("Gagal: " + data.error);
       }
@@ -80,6 +112,9 @@ export default function DashboardPage() {
     }
   };
 
+  // --- LINK PEMBAYARAN DOKU (TES 20rb) ---
+  const paymentLink = "https://pay.doku.com/p-link/p/KzFonnUfSH"; // <-- Link Tes Rp 20.000
+
   return (
     <div className="flex h-screen bg-luxury-cream overflow-hidden relative font-sans">
       
@@ -89,24 +124,28 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-luxury-terracotta text-center animate-fade-in-up">
             <div className="w-16 h-16 bg-luxury-alert/10 text-luxury-alert rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">😱</div>
             <h3 className="text-2xl font-bold text-luxury-dark mb-2">Yah, Kuota Habis!</h3>
-            <p className="text-luxury-dark/60 mb-6">Login sekarang buat dapat akses unlimited & fitur canggih lainnya!</p>
+            <p className="text-luxury-dark/60 mb-6">Upgrade Premium buat akses unlimited tanpa batas!</p>
             <div className="space-y-3">
-              <Link href="/login" className="block w-full bg-luxury-green text-white font-bold py-3 rounded-xl hover:bg-luxury-dark transition-all">Login / Daftar Gratis</Link>
+              <a href={paymentLink} target="_blank" className="block w-full bg-luxury-green text-white font-bold py-3 rounded-xl hover:bg-luxury-dark transition-all">
+                Upgrade Premium (Rp 20rb) 🚀
+              </a>
               <button onClick={() => setShowLimitModal(false)} className="block w-full text-sm text-gray-400 hover:text-luxury-dark">Nanti aja deh</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL PREMIUM */}
+      {/* MODAL PREMIUM FITUR */}
       {showPremiumModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-luxury-dark/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-luxury-green/30 text-center animate-fade-in-up">
             <div className="w-16 h-16 bg-luxury-green/10 text-luxury-green rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">👑</div>
             <h3 className="text-2xl font-bold text-luxury-dark mb-2">Fitur Sultan!</h3>
-            <p className="text-luxury-dark/60 mb-6">Fitur <b>Baca Foto</b> cuma buat member Premium. AI bakal "melihat" produkmu.</p>
+            <p className="text-luxury-dark/60 mb-6">Fitur ini khusus member Premium. Yuk upgrade sekarang!</p>
             <div className="space-y-3">
-              <Link href="/login" className="block w-full bg-luxury-green text-white font-bold py-3 rounded-xl hover:bg-luxury-dark transition-all">Upgrade ke Premium</Link>
+              <a href={paymentLink} target="_blank" className="block w-full bg-luxury-green text-white font-bold py-3 rounded-xl hover:bg-luxury-dark transition-all">
+                Beli Paket Premium 🚀
+              </a>
               <button onClick={() => setShowPremiumModal(false)} className="block w-full text-sm text-gray-400 hover:text-luxury-dark">Kembali ke Gratisan</button>
             </div>
           </div>
@@ -124,27 +163,50 @@ export default function DashboardPage() {
             <button className="w-full flex items-center gap-3 px-4 py-3 bg-luxury-green/10 text-luxury-green rounded-xl font-semibold transition-colors">
               <span className="text-xl">✨</span> Buat Caption
             </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-luxury-dark/60 hover:bg-gray-50 hover:text-luxury-dark rounded-xl font-medium transition-colors">
-              <span className="text-xl">📜</span> Riwayat
-            </button>
+            {/* Tombol Upgrade di Sidebar */}
+            {!isPremium && (
+              <a href={paymentLink} target="_blank" className="w-full flex items-center gap-3 px-4 py-3 text-luxury-terracotta hover:bg-orange-50 rounded-xl font-bold transition-colors mt-4 border border-luxury-terracotta/30">
+                <span className="text-xl">🚀</span> Upgrade Pro
+              </a>
+            )}
           </nav>
         </div>
+        
+        {/* User Info / Kuota */}
         <div className="pt-6 border-t border-gray-100">
           <div className="bg-luxury-cream/50 p-4 rounded-xl mb-4 border border-luxury-terracotta/30">
-            <p className="text-xs font-bold text-luxury-dark/50 uppercase mb-1">Sisa Kuota Tamu</p>
+            <p className="text-xs font-bold text-luxury-dark/50 uppercase mb-1">
+              {isPremium ? "Status Member" : "Sisa Kuota"}
+            </p>
             <div className="flex items-end gap-1">
-              <span className={`text-3xl font-bold ${quota === 0 ? 'text-luxury-alert' : 'text-luxury-green'}`}>{quota}</span>
-              <span className="text-sm text-luxury-dark/40 mb-1">/ 2 Harian</span>
+              <span className={`text-3xl font-bold ${quota === 0 && !isPremium ? 'text-luxury-alert' : 'text-luxury-green'}`}>
+                {isPremium ? "UNLIMITED" : quota}
+              </span>
+              {!isPremium && <span className="text-sm text-luxury-dark/40 mb-1">/ 2 Harian</span>}
             </div>
-            <div className="w-full h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
-               <div className={`h-full rounded-full transition-all duration-500 ${quota === 0 ? 'bg-luxury-alert' : 'bg-luxury-green'}`} style={{ width: `${(quota / 2) * 100}%` }}></div>
-            </div>
+            {!isPremium && (
+               <div className="w-full h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-500 ${quota === 0 ? 'bg-luxury-alert' : 'bg-luxury-green'}`} style={{ width: `${(quota / 2) * 100}%` }}></div>
+               </div>
+            )}
           </div>
+          
+          {/* Tampilkan Email User jika Login */}
           <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 cursor-pointer">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">?</div>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isPremium ? "bg-luxury-green" : "bg-gray-400"}`}>
+               {userEmail ? userEmail[0].toUpperCase() : "?"}
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-luxury-dark truncate">Tamu (Guest)</p>
-              <Link href="/login" className="text-xs text-luxury-green hover:underline">Login sekarang</Link>
+              <p className="text-sm font-bold text-luxury-dark truncate">
+                {userEmail || "Tamu (Guest)"}
+              </p>
+              {userEmail ? (
+                <span className="text-xs text-luxury-green font-semibold">
+                  {isPremium ? "👑 Premium Member" : "Free Plan"}
+                </span>
+              ) : (
+                <Link href="/login" className="text-xs text-luxury-green hover:underline">Login sekarang</Link>
+              )}
             </div>
           </div>
         </div>
@@ -154,7 +216,9 @@ export default function DashboardPage() {
       <main className="flex-1 flex flex-col h-full relative">
         <header className="md:hidden flex items-center justify-between p-4 bg-white border-b border-gray-100">
            <span className="font-bold text-luxury-green">ViralGuidify</span>
-           <span className="text-xs font-bold bg-luxury-cream px-2 py-1 rounded text-luxury-green">Kuota: {quota}</span>
+           <span className="text-xs font-bold bg-luxury-cream px-2 py-1 rounded text-luxury-green">
+             {isPremium ? "UNLIMITED" : `Kuota: ${quota}`}
+           </span>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
@@ -171,7 +235,7 @@ export default function DashboardPage() {
                 <button onClick={() => setActiveTab("text")} className={`font-bold border-b-2 pb-4 -mb-4.5 px-2 transition-all ${activeTab === 'text' ? 'text-luxury-green border-luxury-green' : 'text-gray-400 border-transparent'}`}>
                   📝 Text to Caption
                 </button>
-                <button onClick={() => setShowPremiumModal(true)} className="font-medium text-gray-400 hover:text-luxury-green transition-colors px-2 flex items-center gap-1">
+                <button onClick={() => !isPremium && setShowPremiumModal(true)} className={`font-medium transition-colors px-2 flex items-center gap-1 ${isPremium ? "text-luxury-dark" : "text-gray-400 hover:text-luxury-green"}`}>
                   📸 Image to Caption <span className="text-[10px] bg-luxury-alert text-white px-1.5 py-0.5 rounded">PRO</span>
                 </button>
               </div>
@@ -251,7 +315,6 @@ export default function DashboardPage() {
                   <h3 className="font-bold text-luxury-green">🎉 Hasil Caption Kamu:</h3>
                   <button onClick={() => navigator.clipboard.writeText(generatedResult)} className="text-xs bg-white border border-gray-200 px-3 py-1 rounded-lg hover:bg-gray-50 text-gray-500">Copy Semua</button>
                 </div>
-                {/* Menggunakan 'whitespace-pre-line' supaya enter/baris baru terbaca */}
                 <div className="bg-white p-6 rounded-2xl border border-luxury-sage/20 shadow-sm whitespace-pre-line text-luxury-dark leading-relaxed">
                   {generatedResult}
                 </div>
