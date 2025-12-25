@@ -1,60 +1,62 @@
-import { NextResponse } from "next/server";
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
 
-export const runtime = 'edge'; 
+// Inisialisasi Supabase Admin (Bypass RLS - Wajib pakai Service Role Key)
+// Pastikan Bapak sudah memasukkan SUPABASE_SERVICE_ROLE_KEY di Vercel Environment Variables
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const { product, platform, tone } = await req.json();
-    
-    const apiKey = process.env.GEMINI_API_KEY;
+    // 1. Terima Data dari Lynk.id
+    const payload = await request.json()
+    console.log("🚀 Webhook Lynk.id Masuk:", JSON.stringify(payload, null, 2))
 
-    if (!apiKey) {
-      return NextResponse.json({ result: "API Key belum disetting di Vercel!" }, { status: 500 });
+    // 2. Deteksi Email Pembeli
+    // Lynk.id mungkin menaruh email di 'customer_email', 'email', atau di dalam object 'data'
+    // Kode ini akan mencari di semua kemungkinan tempat
+    const userEmail = 
+      payload.customer_email || 
+      payload.email || 
+      payload.data?.customer_email || 
+      payload.data?.email ||
+      payload.customer?.email;
+
+    // 3. Validasi
+    if (!userEmail) {
+      console.log("⚠️ Email tidak ditemukan di data webhook. Cek Logs Vercel.")
+      return NextResponse.json({ message: 'No email found in payload' }, { status: 200 }) // Tetap return 200 biar Lynk.id tidak retry terus
     }
 
-    // --- KITA PAKAI VERSI TERBARU (GEMINI 3) ---
-    // Sesuai screenshot Bapak: "Gemini 3 Flash Preview"
-    // Format kode teknisnya biasanya lowercase dengan strip.
-    const modelId = "gemini-3-flash-preview"; 
-    
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+    console.log(`✅ Mendeteksi Pembayaran dari: ${userEmail}. Memulai Upgrade...`)
 
-    const promptText = `
-      Bertindaklah sebagai Social Media Specialist profesional.
-      Buat caption viral untuk platform: ${platform}.
-      Topik/Produk: "${product}".
-      Gaya Bahasa (Tone): ${tone}.
-      
-      Instruksi:
-      1. Buat 3 Opsi caption berbeda.
-      2. Gunakan Bahasa Indonesia yang natural & gaul.
-      3. Sertakan emoji yang pas.
-      4. Wajib sertakan 5-10 hashtag viral di setiap opsi.
-    `;
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }]
+    // 4. Eksekusi Upgrade ke Premium (30 Hari)
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({ 
+        is_premium: true, 
+        premium_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() 
       })
-    });
+      .eq('email', userEmail)
 
-    const data = await response.json();
-
-    if (data.error) {
-      return NextResponse.json({ error: "Google Error: " + data.error.message }, { status: 500 });
+    if (error) {
+      console.error("❌ Gagal update database:", error)
+      return NextResponse.json({ error: 'Database update failed' }, { status: 500 })
     }
 
-    // Cek keamanan jika data kosong
-    if (!data.candidates || data.candidates.length === 0) {
-       return NextResponse.json({ error: "Model Gemini 3 belum merespon. Coba generate lagi." }, { status: 500 });
-    }
+    console.log("🎉 SUKSES! User sekarang Premium.")
+    return NextResponse.json({ success: true, message: 'User upgraded' }, { status: 200 })
 
-    const resultText = data.candidates[0].content.parts[0].text;
-    return NextResponse.json({ result: resultText });
-
-  } catch (error: any) {
-    return NextResponse.json({ error: "System Error: " + error.message }, { status: 500 });
+  } catch (err: any) {
+    console.error("❌ Error System:", err.message)
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
