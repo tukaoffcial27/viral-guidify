@@ -1,6 +1,43 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+// GANTI KE SSR (Sesuai page.tsx Bapak)
+import { createBrowserClient } from '@supabase/ssr';
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  // Setup Supabase Client
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    };
+    getUser();
+
+    // Listener Login/Logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
     <header className="fixed top-0 w-full z-50 bg-luxury-cream/80 backdrop-blur-md border-b border-luxury-dark/5">
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex justify-between items-center">
@@ -19,20 +56,25 @@ export default function Navbar() {
 
         {/* Menu Kanan */}
         <div className="flex items-center gap-4">
-          <Link 
-            href="/login" 
-            className="hidden md:block text-luxury-dark hover:text-luxury-green font-medium text-sm transition-colors"
-          >
-            Masuk
-          </Link>
-          
-          {/* REVISI: Link ini sekarang mengarah ke Dashboard, bukan Login */}
-          <Link 
-            href="/dashboard" 
-            className="bg-luxury-green text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-luxury-dark transition-all shadow-xl shadow-luxury-green/20 hover:-translate-y-0.5"
-          >
-            Coba Gratis
-          </Link>
+          {user ? (
+            <>
+              <Link href="/dashboard" className="hidden md:block text-luxury-dark font-medium text-sm hover:text-luxury-green">
+                Dashboard
+              </Link>
+              <button onClick={handleLogout} className="bg-red-50 text-red-600 px-5 py-2 rounded-full text-sm font-bold hover:bg-red-100 transition-all border border-red-200">
+                Keluar
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="hidden md:block text-luxury-dark hover:text-luxury-green font-medium text-sm transition-colors">
+                Masuk
+              </Link>
+              <Link href="/login" className="bg-luxury-green text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-luxury-dark transition-all shadow-xl shadow-luxury-green/20 hover:-translate-y-0.5">
+                Coba Gratis
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

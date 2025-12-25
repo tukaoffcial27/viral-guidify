@@ -178,6 +178,17 @@ export default function DashboardPage() {
               </a>
             )}
           </nav>
+        {!isPremium && (
+            <p className="text-[10px] text-gray-400 mt-3 px-2 italic leading-tight">
+              Sudah bayar tapi status belum berubah? <br/>
+              <span 
+                className="font-bold text-luxury-green cursor-pointer hover:underline" 
+                onClick={() => window.location.reload()}
+              >
+                Klik untuk Refresh
+              </span>
+            </p>
+          )}
         </div>
         
         {/* User Info */}
