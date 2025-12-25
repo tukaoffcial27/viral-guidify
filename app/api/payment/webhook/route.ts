@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// Setup Supabase Admin
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -15,25 +14,24 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: Request) {
   try {
-    // 1. Baca Data dari Lynk.id
     const payload = await request.json()
     console.log("🚀 Webhook Masuk:", JSON.stringify(payload))
 
-    // 2. Cari Email User (Lynk.id menaruhnya di berbagai tempat tergantung tipe pembayaran)
+    // REVISI PENTING: Menyesuaikan struktur data asli dari Lynk.id (Image 19.02)
+    // Jalur: data -> message_data -> customer -> email
     const userEmail = 
-      payload.customer_email || 
-      payload.email || 
-      payload.data?.customer_email || 
-      payload.data?.email ||
-      payload.customer?.email;
+      payload.data?.message_data?.customer?.email || 
+      payload.data?.customer?.email || 
+      payload.email;
 
     if (!userEmail) {
-      return NextResponse.json({ message: 'No email found, but webhook received' }, { status: 200 })
+      console.log("⚠️ Email masih tidak ketemu. Struktur data mungkin berubah.")
+      return NextResponse.json({ message: 'No email found in payload' }, { status: 200 })
     }
 
-    console.log(`✅ Upgrade User: ${userEmail}`)
+    console.log(`✅ MENEMUKAN PEMBAYARAN DARI: ${userEmail}`)
 
-    // 3. Update Database Jadi Premium
+    // Upgrade ke Premium
     const { error } = await supabaseAdmin
       .from('profiles')
       .update({ 
@@ -43,14 +41,14 @@ export async function POST(request: Request) {
       .eq('email', userEmail)
 
     if (error) {
-      console.error("❌ DB Error:", error)
-      return NextResponse.json({ error: 'Failed' }, { status: 500 })
+      console.error("❌ Gagal update database:", error)
+      return NextResponse.json({ error: 'Database update failed' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true }, { status: 200 })
+    console.log("🎉 SUKSES! User Auto-Premium.")
+    return NextResponse.json({ success: true, message: 'User upgraded' }, { status: 200 })
 
   } catch (err: any) {
-    console.error("❌ Server Error:", err.message)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
