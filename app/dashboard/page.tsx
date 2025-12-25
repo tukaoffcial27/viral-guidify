@@ -2,13 +2,17 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { createBrowserClient } from '@supabase/ssr'; // Library terbaru yang sinkron dengan Login
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("text"); 
   const [quota, setQuota] = useState(2); 
   const [inputText, setInputText] = useState("");
   
+  // State untuk Image to Caption
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   // State User
   const [userEmail, setUserEmail] = useState("");
   const [isPremium, setIsPremium] = useState(false);
@@ -26,11 +30,10 @@ export default function DashboardPage() {
   const platforms = ["Instagram", "TikTok", "Facebook", "LinkedIn", "Twitter/X"];
   const tones = ["Santai & Gaul", "Hard Selling", "Lucu / Receh", "Formal & Profesional", "Storytelling / Emosional"];
 
-  // LINK PEMBAYARAN
-  // GANTI BARIS INI:
-const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Link Lynk.id Bapak
+  // LINK PEMBAYARAN (Gunakan ID Produk yang Valid)
+  const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; 
 
-  // 1. Cek User & Status Premium (Perbaikan Logika)
+  // 1. Cek User & Status Premium
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -44,8 +47,7 @@ const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Li
         if (user) {
           setUserEmail(user.email || "");
           
-          // AMBIL DATA PROFIL DARI SUPABASE
-          const { data: profile, error } = await supabase
+          const { data: profile } = await supabase
             .from('profiles')
             .select('is_premium')
             .eq('email', user.email)
@@ -53,14 +55,12 @@ const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Li
             
           if (profile?.is_premium) {
             setIsPremium(true);
-            setQuota(9999); // Unlimited
+            setQuota(9999); 
           } else {
-            // Jika Free, baca kuota tamu
             const savedQuota = localStorage.getItem("guest_quota");
             setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
           }
         } else {
-          // Jika Tamu (Belum Login)
           const savedQuota = localStorage.getItem("guest_quota");
           setQuota(savedQuota !== null ? parseInt(savedQuota) : 2);
         }
@@ -74,16 +74,29 @@ const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Li
     checkUser();
   }, []);
 
+  // --- HANDLE IMAGE UPLOAD ---
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   // --- FUNGSI GENERATE ---
   const handleGenerate = async () => {
-    // Cek Kuota (Kecuali Premium)
     if (!isPremium && quota <= 0) {
       setShowLimitModal(true);
       return;
     }
 
-    if (!inputText.trim()) {
+    // Validasi Input
+    if (activeTab === 'text' && !inputText.trim()) {
       alert("Isi deskripsi produknya dulu ya!");
+      return;
+    }
+    if (activeTab === 'image' && !selectedImage) {
+      alert("Upload foto produknya dulu ya!");
       return;
     }
 
@@ -91,11 +104,14 @@ const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Li
     setGeneratedResult(""); 
 
     try {
+      // NOTE: Di sini nanti Bapak perlu logika API khusus Image (Vision AI)
+      // Untuk sekarang, kita simulasi kirim data ke API generate biasa
+      
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product: inputText,
+          product: activeTab === 'text' ? inputText : `Analisa gambar ini: ${selectedImage?.name}`, // Placeholder Logic
           platform: platform,
           tone: tone,
         }),
@@ -105,8 +121,6 @@ const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Li
 
       if (response.ok) {
         setGeneratedResult(data.result);
-        
-        // Kurangi Kuota HANYA jika BUKAN Premium
         if (!isPremium) {
           const newQuota = quota - 1;
           setQuota(newQuota);
@@ -148,7 +162,7 @@ const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Li
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-luxury-green/30 text-center animate-fade-in-up">
             <div className="w-16 h-16 bg-luxury-green/10 text-luxury-green rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">👑</div>
             <h3 className="text-2xl font-bold text-luxury-dark mb-2">Fitur Sultan!</h3>
-            <p className="text-luxury-dark/60 mb-6">Fitur ini khusus member Premium. Yuk upgrade sekarang!</p>
+            <p className="text-luxury-dark/60 mb-6">Fitur Image-to-Caption khusus member Premium. Yuk upgrade sekarang!</p>
             <div className="space-y-3">
               <a href={paymentLink} target="_blank" className="block w-full bg-luxury-green text-white font-bold py-3 rounded-xl hover:bg-luxury-dark transition-all">
                 Beli Paket Premium 🚀
@@ -171,7 +185,6 @@ const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Li
               <span className="text-xl">✨</span> Buat Caption
             </button>
             
-            {/* Tombol Upgrade & Catatan Refresh */}
             {!isPremium && (
               <>
                 <a href={paymentLink} target="_blank" className="w-full flex items-center gap-3 px-4 py-3 text-luxury-terracotta hover:bg-orange-50 rounded-xl font-bold transition-colors mt-4 border border-luxury-terracotta/30">
@@ -249,21 +262,56 @@ const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Li
             {/* INPUT CARD */}
             <div className="bg-white rounded-3xl p-6 shadow-xl shadow-luxury-terracotta/10 border border-luxury-terracotta/20">
               
+              {/* TABS UTAMA (REVISI LOGIKA) */}
               <div className="flex gap-4 mb-6 border-b border-gray-100 pb-4">
-                <button onClick={() => setActiveTab("text")} className={`font-bold border-b-2 pb-4 -mb-4.5 px-2 transition-all ${activeTab === 'text' ? 'text-luxury-green border-luxury-green' : 'text-gray-400 border-transparent'}`}>
+                <button 
+                  onClick={() => setActiveTab("text")} 
+                  className={`font-bold border-b-2 pb-4 -mb-4.5 px-2 transition-all ${activeTab === 'text' ? 'text-luxury-green border-luxury-green' : 'text-gray-400 border-transparent'}`}
+                >
                   📝 Text to Caption
                 </button>
-                <button onClick={() => !isPremium && setShowPremiumModal(true)} className={`font-medium transition-colors px-2 flex items-center gap-1 ${isPremium ? "text-luxury-dark" : "text-gray-400 hover:text-luxury-green"}`}>
+                <button 
+                  onClick={() => isPremium ? setActiveTab("image") : setShowPremiumModal(true)} 
+                  className={`font-medium transition-colors px-2 flex items-center gap-1 border-b-2 pb-4 -mb-4.5 ${activeTab === 'image' ? 'text-luxury-green border-luxury-green font-bold' : 'text-gray-400 border-transparent hover:text-luxury-green'}`}
+                >
                   📸 Image to Caption <span className="text-[10px] bg-luxury-alert text-white px-1.5 py-0.5 rounded">PRO</span>
                 </button>
               </div>
 
-              <textarea 
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                className="w-full h-32 p-4 bg-luxury-cream/30 rounded-xl border border-gray-200 focus:border-luxury-sage focus:ring-2 focus:ring-luxury-sage/20 outline-none resize-none transition-all placeholder:text-gray-400 text-luxury-dark mb-6"
-                placeholder="Contoh: Jualan keripik pisang coklat lumer, target anak sekolah, diskon 50% khusus hari ini..."
-              ></textarea>
+              {/* AREA INPUT (KONDISIONAL) */}
+              {activeTab === 'text' ? (
+                // MODE TEKS
+                <textarea 
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  className="w-full h-40 p-4 bg-luxury-cream/30 rounded-xl border border-gray-200 focus:border-luxury-sage focus:ring-2 focus:ring-luxury-sage/20 outline-none resize-none transition-all placeholder:text-gray-400 text-luxury-dark mb-6"
+                  placeholder="Contoh: Jualan keripik pisang coklat lumer, target anak sekolah, diskon 50% khusus hari ini..."
+                ></textarea>
+              ) : (
+                // MODE IMAGE (UPLOAD AREA)
+                <div className="mb-6">
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-luxury-green hover:bg-luxury-green/5 transition-all cursor-pointer relative">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    {imagePreview ? (
+                      <div className="flex flex-col items-center">
+                        <img src={imagePreview} alt="Preview" className="h-32 object-contain rounded-lg mb-2 shadow-md" />
+                        <p className="text-sm text-luxury-green font-bold">Ganti Foto</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl mb-2">📷</div>
+                        <p className="font-bold text-gray-500">Klik untuk upload foto produk</p>
+                        <p className="text-xs text-gray-400 mt-1">Format: JPG, PNG (Max 5MB)</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>
