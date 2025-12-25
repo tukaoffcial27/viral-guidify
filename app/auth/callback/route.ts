@@ -6,12 +6,10 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   
-  // Tujuannya kita paksa ke Dashboard
+  // Tujuan utama jika sukses
   const next = '/dashboard'
 
   if (code) {
-    // --- PERBAIKAN UTAMA DI SINI ---
-    // Kita tambahkan 'await' karena di Next.js 15, cookies() itu Async.
     const cookieStore = await cookies()
     
     const supabase = createServerClient(
@@ -35,11 +33,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // Sukses: Lempar user ke Dashboard
+      // SUKSES: Masuk Dashboard
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  // Kalau gagal/error, kembalikan ke home
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  // GAGAL/ERROR: Kembalikan ke halaman Login (Bukan ke halaman 404)
+  return NextResponse.redirect(`${origin}/login?error=LinkInvalid`)
 }
