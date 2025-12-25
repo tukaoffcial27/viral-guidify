@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-// PERBAIKAN: Menggunakan package yang benar sesuai project Bapak (@supabase/ssr)
-import { createBrowserClient } from '@supabase/ssr';
+import { createBrowserClient } from '@supabase/ssr'; // Library terbaru yang sinkron dengan Login
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("text"); 
@@ -27,14 +26,13 @@ export default function DashboardPage() {
   const platforms = ["Instagram", "TikTok", "Facebook", "LinkedIn", "Twitter/X"];
   const tones = ["Santai & Gaul", "Hard Selling", "Lucu / Receh", "Formal & Profesional", "Storytelling / Emosional"];
 
-  // LINK DOKU (TES 20RB)
-  const paymentLink = "https://pay.doku.com/p-link/p/KzFonnUfSH";
+  // LINK PEMBAYARAN
+  const paymentLink = "https://lynk.id/tukastore/caption-ai-viral-tanpa-mikir"; // Ganti dengan Link Lynk.id Bapak
 
-  // 1. Cek User & Status Premium (Versi SSR)
+  // 1. Cek User & Status Premium (Perbaikan Logika)
   useEffect(() => {
     const checkUser = async () => {
       try {
-        // Inisialisasi Client Supabase yang benar
         const supabase = createBrowserClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -45,8 +43,8 @@ export default function DashboardPage() {
         if (user) {
           setUserEmail(user.email || "");
           
-          // Cek status premium di database
-          const { data: profile } = await supabase
+          // AMBIL DATA PROFIL DARI SUPABASE
+          const { data: profile, error } = await supabase
             .from('profiles')
             .select('is_premium')
             .eq('email', user.email)
@@ -135,7 +133,7 @@ export default function DashboardPage() {
             <p className="text-luxury-dark/60 mb-6">Upgrade Premium buat akses unlimited tanpa batas!</p>
             <div className="space-y-3">
               <a href={paymentLink} target="_blank" className="block w-full bg-luxury-green text-white font-bold py-3 rounded-xl hover:bg-luxury-dark transition-all">
-                Upgrade Premium (Rp 20rb) 🚀
+                Upgrade Premium 🚀
               </a>
               <button onClick={() => setShowLimitModal(false)} className="block w-full text-sm text-gray-400 hover:text-luxury-dark">Nanti aja deh</button>
             </div>
@@ -171,24 +169,25 @@ export default function DashboardPage() {
             <button className="w-full flex items-center gap-3 px-4 py-3 bg-luxury-green/10 text-luxury-green rounded-xl font-semibold transition-colors">
               <span className="text-xl">✨</span> Buat Caption
             </button>
-            {/* Tombol Upgrade Sidebar */}
+            
+            {/* Tombol Upgrade & Catatan Refresh */}
             {!isPremium && (
-              <a href={paymentLink} target="_blank" className="w-full flex items-center gap-3 px-4 py-3 text-luxury-terracotta hover:bg-orange-50 rounded-xl font-bold transition-colors mt-4 border border-luxury-terracotta/30">
-                <span className="text-xl">🚀</span> Upgrade Pro
-              </a>
+              <>
+                <a href={paymentLink} target="_blank" className="w-full flex items-center gap-3 px-4 py-3 text-luxury-terracotta hover:bg-orange-50 rounded-xl font-bold transition-colors mt-4 border border-luxury-terracotta/30">
+                  <span className="text-xl">🚀</span> Upgrade Pro
+                </a>
+                <p className="text-[10px] text-gray-400 mt-3 px-2 italic leading-tight">
+                  Sudah bayar tapi status belum berubah? <br/>
+                  <span 
+                    className="font-bold text-luxury-green cursor-pointer hover:underline" 
+                    onClick={() => window.location.reload()}
+                  >
+                    Klik untuk Refresh
+                  </span>
+                </p>
+              </>
             )}
           </nav>
-        {!isPremium && (
-            <p className="text-[10px] text-gray-400 mt-3 px-2 italic leading-tight">
-              Sudah bayar tapi status belum berubah? <br/>
-              <span 
-                className="font-bold text-luxury-green cursor-pointer hover:underline" 
-                onClick={() => window.location.reload()}
-              >
-                Klik untuk Refresh
-              </span>
-            </p>
-          )}
         </div>
         
         {/* User Info */}
