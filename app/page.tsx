@@ -2,22 +2,14 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-luxury-cream font-sans flex flex-col">
+    <div className="min-h-screen bg-luxury-cream font-sans flex flex-col pt-20">
       
-      {/* 1. NAVBAR MANUAL (Khusus Halaman Depan) */}
-      <nav className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full relative z-10">
-        <div className="flex items-center gap-2">
-           <div className="w-8 h-8 bg-luxury-green rounded-lg flex items-center justify-center text-luxury-cream text-lg">⚡</div>
-           <span className="font-bold text-luxury-green text-xl tracking-tight">ViralGuidify</span>
-        </div>
-        
-        {/* REVISI: Hapus "Coba Gratis", Ubah "Masuk" jadi Tombol Hijau */}
-        <div className="flex gap-4">
-          <Link href="/login" className="bg-luxury-green text-white px-6 py-2.5 rounded-xl font-bold hover:bg-luxury-dark transition-all shadow-lg hover:shadow-luxury-green/20">
-            Masuk / Login
-          </Link>
-        </div>
-      </nav>
+      {/* REVISI PENTING:
+        Saya MENGHAPUS manual <nav> di sini.
+        Kenapa? Karena Navbar.tsx (Global) di atas sudah ada dan fixed.
+        Kalau kita pasang nav lagi di sini, nanti jadi dobel/menumpuk.
+        Biar Navbar.tsx saja yang menghandle semuanya.
+      */}
 
       {/* 2. HERO SECTION (Utama) */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 text-center mt-10 mb-20">
