@@ -4,18 +4,17 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-luxury-cream font-sans flex flex-col">
       
-      {/* 1. NAVBAR */}
-      <nav className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full">
+      {/* 1. NAVBAR MANUAL (Khusus Halaman Depan) */}
+      <nav className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full relative z-10">
         <div className="flex items-center gap-2">
            <div className="w-8 h-8 bg-luxury-green rounded-lg flex items-center justify-center text-luxury-cream text-lg">⚡</div>
            <span className="font-bold text-luxury-green text-xl tracking-tight">ViralGuidify</span>
         </div>
+        
+        {/* REVISI: Hapus "Coba Gratis", Ubah "Masuk" jadi Tombol Hijau */}
         <div className="flex gap-4">
-          <Link href="/login" className="text-luxury-dark font-medium hover:text-luxury-green px-4 py-2 transition-colors">
-            Masuk
-          </Link>
-          <Link href="/dashboard" className="bg-luxury-dark text-white px-5 py-2 rounded-xl font-bold hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-            Coba Gratis
+          <Link href="/login" className="bg-luxury-green text-white px-6 py-2.5 rounded-xl font-bold hover:bg-luxury-dark transition-all shadow-lg hover:shadow-luxury-green/20">
+            Masuk / Login
           </Link>
         </div>
       </nav>
@@ -41,7 +40,6 @@ export default function Home() {
             Mulai Sekarang ✨
           </Link>
           
-          {/* TOMBOL "LIHAT CONTOH" SUDAH DIGANTI KE PRICING */}
           <Link href="/pricing" className="bg-white text-luxury-dark border border-gray-200 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all hover:border-luxury-green hover:text-luxury-green flex items-center justify-center gap-2">
             Lihat Harga 💎
           </Link>
@@ -68,7 +66,7 @@ export default function Home() {
 
       </main>
 
-      {/* 4. FOOTER (Sudah Bersih dari Refund) */}
+      {/* 4. FOOTER */}
       <footer className="border-t border-luxury-dark/5 py-12 bg-white mt-auto">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-center md:text-left">
@@ -80,7 +78,6 @@ export default function Home() {
             <Link href="/terms" className="hover:text-luxury-green transition-colors">Syarat & Ketentuan</Link>
             <Link href="/privacy" className="hover:text-luxury-green transition-colors">Privasi</Link>
             <Link href="/contact" className="hover:text-luxury-green transition-colors">Hubungi Kami</Link>
-            {/* LINK REFUND SUDAH DIHAPUS DARI SINI */}
           </div>
         </div>
       </footer>
