@@ -27,7 +27,8 @@ export default function DashboardPage() {
   const tones = ["Santai & Gaul", "Hard Selling", "Lucu / Receh", "Formal & Profesional", "Storytelling / Emosional"];
 
   // LINK PEMBAYARAN
-  const paymentLink = "https://lynk.id/tukastore/caption-ai-viral-tanpa-mikir"; // Ganti dengan Link Lynk.id Bapak
+  // GANTI BARIS INI:
+const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; // Ganti dengan Link Lynk.id Bapak
 
   // 1. Cek User & Status Premium (Perbaikan Logika)
   useEffect(() => {
