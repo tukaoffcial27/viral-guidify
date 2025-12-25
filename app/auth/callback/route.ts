@@ -6,11 +6,11 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   
-  // Tangkap jika ada tujuan khusus (next), jika tidak ada default ke /pricing
-  const next = searchParams.get('next') ?? '/pricing'
+  // KUNCI PERBAIKAN: Default tujuannya kita paksa ke '/dashboard'
+  const next = '/dashboard'
 
   if (code) {
-    const cookieStore = await cookies()
+    const cookieStore = cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -32,12 +32,11 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // PERBAIKAN LOGIKA:
-      // Arahkan user ke halaman Pricing (Upgrade) agar mereka segera bayar.
+      // Sukses: Lempar user ke Dashboard
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  // Jika gagal, kembalikan ke login
-  return NextResponse.redirect(`${origin}/login`)
+  // Kalau gagal/error, kembalikan ke home
+  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
 }
