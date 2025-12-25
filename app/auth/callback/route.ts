@@ -6,11 +6,14 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   
-  // KUNCI PERBAIKAN: Default tujuannya kita paksa ke '/dashboard'
+  // Tujuannya kita paksa ke Dashboard
   const next = '/dashboard'
 
   if (code) {
-    const cookieStore = cookies()
+    // --- PERBAIKAN UTAMA DI SINI ---
+    // Kita tambahkan 'await' karena di Next.js 15, cookies() itu Async.
+    const cookieStore = await cookies()
+    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
