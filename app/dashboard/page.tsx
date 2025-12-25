@@ -30,7 +30,7 @@ export default function DashboardPage() {
   const platforms = ["Instagram", "TikTok", "Facebook", "LinkedIn", "Twitter/X"];
   const tones = ["Santai & Gaul", "Hard Selling", "Lucu / Receh", "Formal & Profesional", "Storytelling / Emosional"];
 
-  // LINK PEMBAYARAN (Gunakan ID Produk yang Valid)
+  // LINK PEMBAYARAN
   const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481"; 
 
   // 1. Cek User & Status Premium
@@ -85,33 +85,31 @@ export default function DashboardPage() {
 
   // --- FUNGSI GENERATE ---
   const handleGenerate = async () => {
+    // 1. Cek Kuota
     if (!isPremium && quota <= 0) {
       setShowLimitModal(true);
       return;
     }
 
-    // Validasi Input
-    if (activeTab === 'text' && !inputText.trim()) {
-      alert("Isi deskripsi produknya dulu ya!");
-      return;
-    }
-    if (activeTab === 'image' && !selectedImage) {
-      alert("Upload foto produknya dulu ya!");
+    // 2. Validasi Input
+    if (!inputText.trim()) {
+      alert("Mohon isi deskripsi produknya dulu ya!");
       return;
     }
 
+    // 3. Mulai Loading
     setIsLoading(true);
     setGeneratedResult(""); 
 
     try {
-      // NOTE: Di sini nanti Bapak perlu logika API khusus Image (Vision AI)
-      // Untuk sekarang, kita simulasi kirim data ke API generate biasa
+      // NOTE: Saat ini kita kirim Text Input sebagai 'product'.
+      // Jika nanti Backend Vision AI sudah siap, kita bisa kirim gambar juga.
       
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product: activeTab === 'text' ? inputText : `Analisa gambar ini: ${selectedImage?.name}`, // Placeholder Logic
+          product: inputText, // Kita kirim teks deskripsi ke AI
           platform: platform,
           tone: tone,
         }),
@@ -121,6 +119,8 @@ export default function DashboardPage() {
 
       if (response.ok) {
         setGeneratedResult(data.result);
+        
+        // Kurangi Kuota jika Free
         if (!isPremium) {
           const newQuota = quota - 1;
           setQuota(newQuota);
@@ -262,7 +262,7 @@ export default function DashboardPage() {
             {/* INPUT CARD */}
             <div className="bg-white rounded-3xl p-6 shadow-xl shadow-luxury-terracotta/10 border border-luxury-terracotta/20">
               
-              {/* TABS UTAMA (REVISI LOGIKA) */}
+              {/* TABS */}
               <div className="flex gap-4 mb-6 border-b border-gray-100 pb-4">
                 <button 
                   onClick={() => setActiveTab("text")} 
@@ -278,19 +278,10 @@ export default function DashboardPage() {
                 </button>
               </div>
 
-              {/* AREA INPUT (KONDISIONAL) */}
-              {activeTab === 'text' ? (
-                // MODE TEKS
-                <textarea 
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  className="w-full h-40 p-4 bg-luxury-cream/30 rounded-xl border border-gray-200 focus:border-luxury-sage focus:ring-2 focus:ring-luxury-sage/20 outline-none resize-none transition-all placeholder:text-gray-400 text-luxury-dark mb-6"
-                  placeholder="Contoh: Jualan keripik pisang coklat lumer, target anak sekolah, diskon 50% khusus hari ini..."
-                ></textarea>
-              ) : (
-                // MODE IMAGE (UPLOAD AREA)
-                <div className="mb-6">
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-luxury-green hover:bg-luxury-green/5 transition-all cursor-pointer relative">
+              {/* UPLOAD AREA (Hanya muncul jika Tab Image dipilih) */}
+              {activeTab === 'image' && (
+                <div className="mb-6 animate-fade-in-up">
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-luxury-green hover:bg-luxury-green/5 transition-all cursor-pointer relative bg-gray-50">
                     <input 
                       type="file" 
                       accept="image/*"
@@ -312,6 +303,20 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
+
+              {/* TEXT AREA (MUNCUL DI KEDUA MODE) */}
+              {/* Di mode Image, ini jadi "Konteks Tambahan" */}
+              <div className="mb-6">
+                 <label className="block text-sm font-bold text-luxury-dark mb-2">
+                   {activeTab === 'text' ? "Deskripsi Produk" : "Detail Tambahan (Opsional)"}
+                 </label>
+                 <textarea 
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  className="w-full h-32 p-4 bg-luxury-cream/30 rounded-xl border border-gray-200 focus:border-luxury-sage focus:ring-2 focus:ring-luxury-sage/20 outline-none resize-none transition-all placeholder:text-gray-400 text-luxury-dark"
+                  placeholder={activeTab === 'text' ? "Contoh: Keripik pisang coklat lumer..." : "Contoh: Fokus ke bahan kainnya yang lembut..."}
+                ></textarea>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>

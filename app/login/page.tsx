@@ -15,7 +15,8 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // LOGIN DENGAN EMAIL (MAGIC LINK)
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
@@ -24,15 +25,15 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          // KUNCI PERBAIKAN: Memaksa redirect ke Dashboard setelah link diklik
+          // Redirect ke Dashboard setelah klik link di email
           emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         },
       });
 
       if (error) {
-        setMessage("Gagal mengirim link. Cek emailnya benar nggak?");
+        setMessage("Gagal mengirim link. Pastikan email benar.");
       } else {
-        setMessage("✅ Link login sudah dikirim ke email! Cek Inbox/Spam ya.");
+        setMessage("✅ Link login sudah dikirim! Cek Inbox/Spam email Anda.");
       }
     } catch (err) {
       setMessage("Terjadi kesalahan sistem.");
@@ -51,11 +52,12 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-luxury-green mb-2">Login Tanpa Password</h1>
           <p className="text-luxury-dark/60 text-sm">
-            Cukup masukkan email, kami kirim link ajaib buat masuk langsung.
+            Masukkan email, kami kirim link ajaib untuk masuk instan.
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        {/* FORM EMAIL SAJA (Tanpa Google) */}
+        <form onSubmit={handleEmailLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-luxury-dark mb-2">Email Kamu</label>
             <input
