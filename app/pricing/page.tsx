@@ -3,8 +3,9 @@
 import Link from "next/link";
 
 export default function PricingPage() {
-  // LINK MAYAR FINAL (Sudah dipasang)
-  const paymentLink = "https://tuka-official.myr.id/pl/viralguidify-premium";
+  // LINK LYNK.ID (TUKA STORE) - SIAP JUALAN! 🚀
+  // Saya sudah ubah ke HTTPS agar aman saat dibuka di browser
+  const paymentLink = "https://lynk.id/tukastore/5pwqg0m31481/checkout";
 
   return (
     <div className="min-h-screen bg-luxury-cream font-sans flex flex-col">
@@ -18,7 +19,7 @@ export default function PricingPage() {
           Pilih Senjata Viralmu
         </h1>
         <p className="text-luxury-dark/60 max-w-2xl mx-auto text-lg">
-          Upgrade ke AI Premium dan dominasi algoritma sosial media sekarang.
+          Jangan biarkan kontenmu sepi penonton. Upgrade ke AI Premium dan dominasi algoritma sosial media sekarang.
         </p>
       </div>
 
@@ -46,7 +47,7 @@ export default function PricingPage() {
             </Link>
           </div>
 
-          {/* PAKET PREMIUM */}
+          {/* PAKET PREMIUM (LINKED TO LYNK.ID) */}
           <div className="bg-white rounded-3xl p-8 border-2 border-luxury-green shadow-2xl relative overflow-hidden transform md:-translate-y-4">
             <div className="absolute top-0 right-0 bg-luxury-green text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">PALING LARIS 🔥</div>
             
@@ -61,10 +62,10 @@ export default function PricingPage() {
             <ul className="space-y-4 mb-8 text-luxury-dark">
               <li className="flex items-center gap-3 font-medium"><span className="text-luxury-green">✓</span> Unlimited Caption</li>
               <li className="flex items-center gap-3 font-medium"><span className="text-luxury-green">✓</span> Fitur Baca Foto (Vision AI)</li>
-              <li className="flex items-center gap-3 font-medium"><span className="text-luxury-green">✓</span> Semua Gaya Bahasa</li>
+              <li className="flex items-center gap-3 font-medium"><span className="text-luxury-green">✓</span> Akses Semua Gaya Bahasa</li>
             </ul>
 
-            {/* TOMBOL YANG MENGARAH KE MAYAR */}
+            {/* TOMBOL YANG MENGARAH KE LYNK.ID */}
             <a 
               href={paymentLink}
               target="_blank"
@@ -73,6 +74,10 @@ export default function PricingPage() {
             >
               Upgrade Sekarang ⚡
             </a>
+            
+            <p className="text-center text-xs text-gray-400 mt-4">
+              *Masa aktif 30 hari, bisa diperpanjang kapan saja.
+            </p>
           </div>
 
         </div>
