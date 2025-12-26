@@ -83,7 +83,7 @@ export default function DashboardPage() {
     }
   };
 
-  // --- FUNGSI GENERATE ---
+  // --- FUNGSI GENERATE (SUDAH DIPERBAIKI) ---
   const handleGenerate = async () => {
     // 1. Cek Kuota
     if (!isPremium && quota <= 0) {
@@ -91,9 +91,15 @@ export default function DashboardPage() {
       return;
     }
 
-    // 2. Validasi Input
-    if (!inputText.trim()) {
+    // 2. Validasi Input (PERBAIKAN DI SINI)
+    // Kalau Tab Text: Wajib ada tulisan
+    if (activeTab === 'text' && !inputText.trim()) {
       alert("Mohon isi deskripsi produknya dulu ya!");
+      return;
+    }
+    // Kalau Tab Image: Wajib ada gambar (Tulisan boleh kosong)
+    if (activeTab === 'image' && !selectedImage) {
+      alert("Mohon upload foto produknya dulu ya!");
       return;
     }
 
@@ -101,15 +107,19 @@ export default function DashboardPage() {
     setIsLoading(true);
     setGeneratedResult(""); 
 
+    // Siapkan data yang mau dikirim
+    let dataProduct = inputText;
+    // Kalau user di mode gambar & teks kosong, kita kirim nama filenya sebagai konteks
+    if (activeTab === 'image' && !inputText.trim()) {
+        dataProduct = `(User mengupload gambar produk: ${selectedImage?.name}). Buatkan caption kreatif yang relevan.`;
+    }
+
     try {
-      // NOTE: Saat ini kita kirim Text Input sebagai 'product'.
-      // Jika nanti Backend Vision AI sudah siap, kita bisa kirim gambar juga.
-      
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product: inputText, // Kita kirim teks deskripsi ke AI
+          product: dataProduct, // Kirim data yang sudah diolah
           platform: platform,
           tone: tone,
         }),
@@ -308,7 +318,8 @@ export default function DashboardPage() {
               {/* Di mode Image, ini jadi "Konteks Tambahan" */}
               <div className="mb-6">
                  <label className="block text-sm font-bold text-luxury-dark mb-2">
-                   {activeTab === 'text' ? "Deskripsi Produk" : "Detail Tambahan (Opsional)"}
+                   {/* LABEL DINAMIS: Berubah sesuai mode */}
+                   {activeTab === 'text' ? "Deskripsi Produk (Wajib)" : "Detail Tambahan (Opsional)"}
                  </label>
                  <textarea 
                   value={inputText}
