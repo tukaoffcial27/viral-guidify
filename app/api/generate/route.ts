@@ -1,62 +1,58 @@
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { NextResponse } from "next/server";
 
-// Inisialisasi Supabase Admin (Bypass RLS - Wajib pakai Service Role Key)
-// Pastikan Bapak sudah memasukkan SUPABASE_SERVICE_ROLE_KEY di Vercel Environment Variables
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
-
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    // 1. Terima Data dari Lynk.id
-    const payload = await request.json()
-    console.log("🚀 Webhook Lynk.id Masuk:", JSON.stringify(payload, null, 2))
-
-    // 2. Deteksi Email Pembeli
-    // Lynk.id mungkin menaruh email di 'customer_email', 'email', atau di dalam object 'data'
-    // Kode ini akan mencari di semua kemungkinan tempat
-    const userEmail = 
-      payload.customer_email || 
-      payload.email || 
-      payload.data?.customer_email || 
-      payload.data?.email ||
-      payload.customer?.email;
-
-    // 3. Validasi
-    if (!userEmail) {
-      console.log("⚠️ Email tidak ditemukan di data webhook. Cek Logs Vercel.")
-      return NextResponse.json({ message: 'No email found in payload' }, { status: 200 }) // Tetap return 200 biar Lynk.id tidak retry terus
+    // 1. Ambil API Key
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Server Error: API Key belum disetting di Vercel." },
+        { status: 500 }
+      );
     }
 
-    console.log(`✅ Mendeteksi Pembayaran dari: ${userEmail}. Memulai Upgrade...`)
+    // 2. Terima Data dari Dashboard
+    const { product, platform, tone } = await req.json();
 
-    // 4. Eksekusi Upgrade ke Premium (30 Hari)
-    const { error } = await supabaseAdmin
-      .from('profiles')
-      .update({ 
-        is_premium: true, 
-        premium_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() 
-      })
-      .eq('email', userEmail)
+    // 3. Inisialisasi Google Gemini 3.0 (Sesuai Screenshot Bapak)
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // --- KUNCI UTAMA DI SINI ---
+    const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
 
-    if (error) {
-      console.error("❌ Gagal update database:", error)
-      return NextResponse.json({ error: 'Database update failed' }, { status: 500 })
-    }
+    // 4. Rakit Perintah (Prompt)
+    const prompt = `
+      Bertindaklah sebagai Copywriter Profesional.
+      Buat caption jualan yang VIRAL untuk produk berikut:
 
-    console.log("🎉 SUKSES! User sekarang Premium.")
-    return NextResponse.json({ success: true, message: 'User upgraded' }, { status: 200 })
+      - PRODUK: ${product}
+      - PLATFORM: ${platform}
+      - GAYA BAHASA: ${tone}
 
-  } catch (err: any) {
-    console.error("❌ Error System:", err.message)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+      Struktur Caption:
+      1. HEADLINE: Hook yang kuat/memancing perhatian.
+      2. BODY: Penjelasan manfaat produk yang menarik.
+      3. CTA: Ajakan bertindak yang jelas.
+      4. HASHTAG: 10 hashtag viral relevan.
+
+      Pastikan output rapi, menggunakan emoji yang pas, dan bahasa Indonesia yang natural.
+    `;
+
+    // 5. Generate Konten
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // 6. Kirim Hasil
+    return NextResponse.json({ result: text });
+
+  } catch (error) {
+    console.error("❌ Error Gemini 3.0:", error);
+    return NextResponse.json(
+      { error: "Maaf, AI sedang sibuk atau limit tercapai. Coba lagi nanti." },
+      { status: 500 }
+    );
   }
 }
