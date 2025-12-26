@@ -78,12 +78,25 @@ export default function DashboardPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      // Validasi ukuran (Max 4MB agar aman)
+      if (file.size > 4 * 1024 * 1024) {
+        alert("Ukuran file terlalu besar. Maksimal 4MB ya.");
+        return;
+      }
       setSelectedImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  // --- FUNGSI GENERATE (SUDAH DIPERBAIKI) ---
+  // --- [BARU] FUNGSI KONVERSI GAMBAR AGAR BISA DIBACA AI ---
+  const toBase64 = (file: File) => new Promise<string | null>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+
+  // --- FUNGSI GENERATE (SUDAH DISESUAIKAN UNTUK VISION AI) ---
   const handleGenerate = async () => {
     // 1. Cek Kuota
     if (!isPremium && quota <= 0) {
@@ -91,13 +104,11 @@ export default function DashboardPage() {
       return;
     }
 
-    // 2. Validasi Input (PERBAIKAN DI SINI)
-    // Kalau Tab Text: Wajib ada tulisan
+    // 2. Validasi Input
     if (activeTab === 'text' && !inputText.trim()) {
       alert("Mohon isi deskripsi produknya dulu ya!");
       return;
     }
-    // Kalau Tab Image: Wajib ada gambar (Tulisan boleh kosong)
     if (activeTab === 'image' && !selectedImage) {
       alert("Mohon upload foto produknya dulu ya!");
       return;
@@ -107,19 +118,26 @@ export default function DashboardPage() {
     setIsLoading(true);
     setGeneratedResult(""); 
 
-    // Siapkan data yang mau dikirim
-    let dataProduct = inputText;
-    // Kalau user di mode gambar & teks kosong, kita kirim nama filenya sebagai konteks
-    if (activeTab === 'image' && !inputText.trim()) {
-        dataProduct = `(User mengupload gambar produk: ${selectedImage?.name}). Buatkan caption kreatif yang relevan.`;
-    }
-
     try {
+      // PROSES GAMBAR (Jika ada)
+      let imageBase64 = null;
+      if (activeTab === 'image' && selectedImage) {
+          try {
+             imageBase64 = await toBase64(selectedImage);
+          } catch (e) {
+             console.error("Gagal proses gambar:", e);
+             alert("Gagal memproses gambar.");
+             setIsLoading(false);
+             return;
+          }
+      }
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product: dataProduct, // Kirim data yang sudah diolah
+          product: inputText, 
+          image: imageBase64, // KITA KIRIM DATA GAMBAR ASLI KE SINI
           platform: platform,
           tone: tone,
         }),
