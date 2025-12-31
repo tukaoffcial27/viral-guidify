@@ -1,16 +1,16 @@
 import { MetadataRoute } from 'next';
-import cities from '@/cities.json';
+import cities from '../cities.json'; // Jalur ke file cities.json di Root
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://viral.guidify.app';
 
-  // Daftar halaman utama
+  // Halaman Utama
   const routes = ['', '/pricing', '/login'].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
   }));
 
-  // Tambahkan semua kota otomatis
+  // Halaman Kota Otomatis
   const cityRoutes = cities.map((city) => ({
     url: `${baseUrl}/${city.slug}`,
     lastModified: new Date(),
